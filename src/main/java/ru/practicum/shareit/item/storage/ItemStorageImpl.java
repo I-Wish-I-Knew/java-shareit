@@ -57,7 +57,7 @@ public class ItemStorageImpl implements ItemStorage {
 
     @Override
     public List<Item> searchItem(String text) {
-        if(text.isEmpty()){
+        if (text.isEmpty()) {
             return new ArrayList<>();
         }
         return itemsByOwner.values().stream()

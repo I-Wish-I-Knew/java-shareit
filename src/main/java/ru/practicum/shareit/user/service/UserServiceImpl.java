@@ -82,14 +82,15 @@ public class UserServiceImpl implements UserService {
     private void validateUserForUpdate(UserDto user) {
         if (storage.getAll().stream().anyMatch(u -> u.getEmail().equals(user.getEmail())
                 && !u.getId().equals(user.getId()))) {
-            throw new AlreadyExistsException
-                    (String.format("Пользователь с email - %s уже существует", user.getEmail()));
+            throw new AlreadyExistsException(String.format("Пользователь с email - %s уже существует",
+                    user.getEmail()));
         }
     }
+
     private void validateUserForSave(User user) {
         if (storage.getAll().stream().anyMatch(u -> u.getEmail().equals(user.getEmail()))) {
-            throw new AlreadyExistsException
-                    (String.format("Пользователь с email - %s уже существует", user.getEmail()));
+            throw new AlreadyExistsException(String.format("Пользователь с email - %s уже существует",
+                    user.getEmail()));
         }
     }
 }
