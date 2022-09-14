@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.AlreadyExistsException;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.UpdateFailedException;
 import ru.practicum.shareit.user.converter.UserConverter;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.model.UserDto;
@@ -60,7 +61,7 @@ public class UserServiceImpl implements UserService {
         try {
             updatedUser = mapper.readerForUpdating(updatedUser).readValue(updatedFields);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            throw new UpdateFailedException("Не удалось обновить данные");
         }
         validateUserForUpdate(updatedUser);
         storage.update(converter.convertToUser(updatedUser));

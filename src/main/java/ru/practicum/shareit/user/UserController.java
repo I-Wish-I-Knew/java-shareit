@@ -5,8 +5,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.user.model.UserDto;
 import ru.practicum.shareit.user.service.UserService;
-import ru.practicum.shareit.util.Create;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -32,7 +32,7 @@ public class UserController {
     }
 
     @PostMapping
-    public UserDto save(@RequestBody @Validated(Create.class) UserDto userDto) {
+    public UserDto save(@RequestBody @Valid UserDto userDto) {
         return service.save(userDto);
     }
 

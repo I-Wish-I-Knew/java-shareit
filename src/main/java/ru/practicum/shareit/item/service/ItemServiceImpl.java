@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.UpdateFailedException;
 import ru.practicum.shareit.exception.UserNotSpecifiedException;
 import ru.practicum.shareit.item.converter.ItemConverter;
 import ru.practicum.shareit.item.dto.ItemDto;
@@ -55,7 +56,7 @@ public class ItemServiceImpl implements ItemService {
         try {
             updatedItem = mapper.readerForUpdating(updatedItem).readValue(updatedFields);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            throw new UpdateFailedException("Не удалось обновить данные");
         }
         storage.update(updatedItem);
         return converter.convertToItemDto(updatedItem);
