@@ -1,19 +1,18 @@
-package ru.practicum.shareit.item.dto;
+package ru.practicum.shareit.user.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 
 @Data
 @NoArgsConstructor
-public class ItemDto {
+public class UserDto {
     private Long id;
     @NotBlank
     private String name;
     @NotBlank
-    private String description;
-    @NotNull
-    private Boolean available;
+    @Email(regexp = "[a-z0-9._%+-]+@[a-z0-9.-]+.[a-z]+")
+    private String email;
 }
