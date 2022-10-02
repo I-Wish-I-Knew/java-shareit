@@ -2,37 +2,33 @@ package ru.practicum.shareit.user.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.exception.AlreadyExistsException;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.UpdateFailedException;
-import ru.practicum.shareit.user.converter.UserConverter;
+import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.dto.UserMapper;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.model.UserDto;
 import ru.practicum.shareit.user.storage.UserStorage;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
-
     private final UserStorage storage;
-    private final UserConverter converter;
+    private final UserMapper converter;
+    public static final String USER_NOT_FOUND = "Пользователь c id - %d не найден";
 
-    private long userId;
-
-    @Autowired
-    public UserServiceImpl(UserStorage storage, UserConverter converter) {
+    public UserServiceImpl(UserStorage storage, UserMapper converter) {
         this.storage = storage;
         this.converter = converter;
-        this.userId = 0;
     }
 
     @Override
     public List<UserDto> getAll() {
-        List<User> users = storage.getAll();
+        List<User> users = storage.findAll();
         return users.stream()
                 .map(converter::convertToUserDto)
                 .collect(Collectors.toList());
@@ -40,58 +36,38 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto get(Long id) {
-        checkContainsInStorage(id);
-        return converter.convertToUserDto(storage.get(id));
+        User user = storage.findById(id)
+                .orElseThrow(() -> new NotFoundException(String.format(USER_NOT_FOUND, id)));
+        return converter.convertToUserDto(user);
     }
 
+    @Transactional
     @Override
     public UserDto save(UserDto userDto) {
         User user = converter.convertToUser(userDto);
-        validateUserForSave(user);
-        user.setId(++userId);
         storage.save(user);
         return converter.convertToUserDto(user);
     }
 
+    @Transactional
     @Override
     public UserDto update(Long id, String updatedFields) {
-        checkContainsInStorage(id);
-        UserDto updatedUser = get(id);
+        User updatedUser = storage.findById(id)
+                .orElseThrow(() -> new NotFoundException(String.format(USER_NOT_FOUND, id)));
         ObjectMapper mapper = new ObjectMapper();
         try {
             updatedUser = mapper.readerForUpdating(updatedUser).readValue(updatedFields);
         } catch (JsonProcessingException e) {
             throw new UpdateFailedException("Не удалось обновить данные");
         }
-        validateUserForUpdate(updatedUser);
-        storage.update(converter.convertToUser(updatedUser));
-        return updatedUser;
+        storage.save(updatedUser);
+        return converter.convertToUserDto(updatedUser);
     }
 
+    @Transactional
     @Override
     public void delete(Long id) {
-        checkContainsInStorage(id);
-        storage.delete(id);
+        storage.deleteById(id);
     }
 
-    private void checkContainsInStorage(Long userId) {
-        if (!storage.containsInStorage(userId)) {
-            throw new NotFoundException(String.format("Пользователь с id - %d не найден", userId));
-        }
-    }
-
-    private void validateUserForUpdate(UserDto user) {
-        if (storage.getAll().stream().anyMatch(u -> u.getEmail().equals(user.getEmail())
-                && !u.getId().equals(user.getId()))) {
-            throw new AlreadyExistsException(String.format("Пользователь с email - %s уже существует",
-                    user.getEmail()));
-        }
-    }
-
-    private void validateUserForSave(User user) {
-        if (storage.getAll().stream().anyMatch(u -> u.getEmail().equals(user.getEmail()))) {
-            throw new AlreadyExistsException(String.format("Пользователь с email - %s уже существует",
-                    user.getEmail()));
-        }
-    }
 }
