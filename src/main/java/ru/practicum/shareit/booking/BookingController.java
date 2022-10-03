@@ -43,12 +43,12 @@ public class BookingController {
     @GetMapping
     public List<BookingDtoInfo> getAllByBookerAndState(@RequestParam(required = false, defaultValue = "ALL") State state,
                                                        @RequestHeader("X-Sharer-User-Id") Long bookerId) {
-        return service.getAllByBooker(state, bookerId);
+        return service.getAll(state, bookerId, false);
     }
 
     @GetMapping("/owner")
     public List<BookingDtoInfo> getAllByOwnerAndState(@RequestParam(required = false, defaultValue = "ALL") State state,
                                                       @RequestHeader("X-Sharer-User-Id") Long ownerId) {
-        return service.getAllByOwner(state, ownerId);
+        return service.getAll(state, ownerId, true);
     }
 }

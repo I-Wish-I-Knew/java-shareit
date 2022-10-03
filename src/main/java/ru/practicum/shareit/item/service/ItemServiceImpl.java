@@ -2,7 +2,6 @@ package ru.practicum.shareit.item.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +32,6 @@ import java.util.stream.Collectors;
 import static ru.practicum.shareit.user.service.UserServiceImpl.USER_NOT_FOUND;
 
 @Service
-@Slf4j
 @Transactional(readOnly = true)
 public class ItemServiceImpl implements ItemService {
 

@@ -69,7 +69,7 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorResponse handleUnexpectedError(RuntimeException e) {
+    public ErrorResponse handleUnexpectedError(Throwable e) {
         log.error(e.getMessage(), e);
         return new ErrorResponse("Unknown error", e.getMessage());
     }

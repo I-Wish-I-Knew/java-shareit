@@ -1,7 +1,5 @@
 package ru.practicum.shareit.booking.service;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.dto.BookingDto;
@@ -19,6 +17,12 @@ import ru.practicum.shareit.item.storage.ItemStorage;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.storage.UserStorage;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,13 +33,13 @@ import static ru.practicum.shareit.user.service.UserServiceImpl.USER_NOT_FOUND;
 
 @Service
 @Transactional(readOnly = true)
-@Slf4j
 public class BookingServiceImpl implements BookingService {
 
     private final BookingStorage storage;
     private final UserStorage userStorage;
     private final ItemStorage itemStorage;
-    private final Sort sort = Sort.by(Sort.Order.desc("start"));
+    @PersistenceContext
+    private EntityManager entityManager;
     public static final String BOOKING_NOT_FOUND = "Бронирование с id -" +
             " %d не найдено";
 
@@ -90,63 +94,41 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingDtoInfo> getAllByBooker(State state, Long bookerId) {
-        List<Booking> bookings = new ArrayList<>();
+    public List<BookingDtoInfo> getAll(State state, Long userId, boolean isOwner) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Booking> cq = cb.createQuery(Booking.class);
+        Root<Booking> booking = cq.from(Booking.class);
+        List<Predicate> predicates = new ArrayList<>();
+        if (isOwner) {
+            predicates.add(cb.equal(booking.get("item").get("owner").get("id"), userId));
+        } else {
+            predicates.add(cb.equal(booking.get("booker").get("id"), userId));
+        }
         switch (state) {
             case CURRENT:
-                bookings = storage.findByBookerIdAndDateBetweenStartAndEnd(bookerId, LocalDateTime.now());
-                break;
-            case PAST:
-                bookings = storage.findByBookerIdAndEndBefore(bookerId, LocalDateTime.now(), sort);
+                predicates.add(cb.lessThanOrEqualTo(booking.get("start"), LocalDateTime.now()));
+                predicates.add(cb.greaterThan(booking.get("end"), LocalDateTime.now()));
                 break;
             case FUTURE:
-                bookings = storage.findByBookerIdAndStartAfter(bookerId, LocalDateTime.now(), sort);
-                break;
-            case REJECTED:
-                bookings = storage.findByBookerIdAndStatusEquals(bookerId, BookingStatus.REJECTED, sort);
-                break;
-            case WAITING:
-                bookings = storage.findByBookerIdAndStatusEquals(bookerId, BookingStatus.WAITING, sort);
-                break;
-            case ALL:
-                bookings = storage.findByBookerId(bookerId, sort);
-                break;
-        }
-        if (bookings.isEmpty()) {
-            throw new NotFoundException(String.format("Бронирования для арендатора с id %d не найдены", bookerId));
-        }
-        return bookings.stream()
-                .map(BookingMapper::convertToBookingDtoInfo)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<BookingDtoInfo> getAllByOwner(State state, Long ownerId) {
-        List<Booking> bookings = new ArrayList<>();
-        switch (state) {
-            case CURRENT:
-                bookings = storage.findByItemOwnerIdAndDateBetweenStartAndEnd(ownerId, LocalDateTime.now());
+                predicates.add(cb.greaterThan(booking.get("start"), LocalDateTime.now()));
                 break;
             case PAST:
-                bookings = storage.findByItemOwnerIdAndEndBefore(ownerId, LocalDateTime.now(), sort);
-                break;
-            case FUTURE:
-                bookings = storage.findByItemOwnerIdAndStartAfter(ownerId, LocalDateTime.now(), sort);
+                predicates.add(cb.lessThan(booking.get("end"), LocalDateTime.now()));
                 break;
             case REJECTED:
-                bookings = storage.findByItemOwnerIdAndStatusEquals(ownerId, BookingStatus.REJECTED, sort);
+                predicates.add(cb.equal(booking.get("status"), BookingStatus.REJECTED));
                 break;
             case WAITING:
-                bookings = storage.findByItemOwnerIdAndStatusEquals(ownerId, BookingStatus.WAITING, sort);
+                predicates.add(cb.equal(booking.get("status"), BookingStatus.WAITING));
                 break;
             case ALL:
-                bookings = storage.findByItemOwnerId(ownerId, sort);
                 break;
         }
+        cq.select(booking).where(predicates.toArray(new Predicate[]{})).orderBy(cb.desc(booking.get("start")));
+        List<Booking> bookings = entityManager.createQuery(cq).getResultList();
         if (bookings.isEmpty()) {
-            throw new NotFoundException(String.format("Бронирования для хозяина вещи с id %d не найдены", ownerId));
+            throw new NotFoundException(String.format("Бронирования для пользователя с id %d не найдены", userId));
         }
-
         return bookings.stream()
                 .map(BookingMapper::convertToBookingDtoInfo)
                 .collect(Collectors.toList());

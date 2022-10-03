@@ -1,6 +1,5 @@
 package ru.practicum.shareit.booking.storage;
 
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,44 +11,12 @@ import java.util.List;
 import java.util.Optional;
 
 public interface BookingStorage extends JpaRepository<Booking, Long> {
-    List<Booking> findByBookerId(Long bookerId, Sort sort);
-
     Optional<Booking> findBookingByIdAndBookerId(Long id, Long bookerId);
 
     Optional<Booking> findBookingByIdAndItemOwnerId(Long id, Long ownerId);
 
     List<Booking> findByItemIdAndBookerIdAndStatusAndEndBefore(Long itemId, Long bookerId,
                                                                BookingStatus status, LocalDateTime now);
-
-    @Query("select b from Booking b " +
-            "where b.booker.id = :bookerId " +
-            "and b.start <= :now " +
-            "and b.end > :now " +
-            "order by b.start desc")
-    List<Booking> findByBookerIdAndDateBetweenStartAndEnd(@Param("bookerId") Long bookerId,
-                                                          @Param("now") LocalDateTime now);
-
-    List<Booking> findByBookerIdAndEndBefore(Long bookerId, LocalDateTime now, Sort sort);
-
-    List<Booking> findByBookerIdAndStartAfter(Long bookerId, LocalDateTime now, Sort sort);
-
-    List<Booking> findByBookerIdAndStatusEquals(Long bookerId, BookingStatus status, Sort sort);
-
-    List<Booking> findByItemOwnerId(Long ownerId, Sort sort);
-
-    @Query("select b from Booking b " +
-            "where b.item.owner.id = :ownerId " +
-            "and b.start <= :now " +
-            "and b.end > :now " +
-            "order by b.start desc")
-    List<Booking> findByItemOwnerIdAndDateBetweenStartAndEnd(@Param("ownerId") Long ownerId,
-                                                             @Param("now") LocalDateTime now);
-
-    List<Booking> findByItemOwnerIdAndEndBefore(Long ownerId, LocalDateTime now, Sort sort);
-
-    List<Booking> findByItemOwnerIdAndStartAfter(Long ownerId, LocalDateTime now, Sort sort);
-
-    List<Booking> findByItemOwnerIdAndStatusEquals(Long ownerId, BookingStatus status, Sort sort);
 
     @Query("select count(b)>0 from Booking b " +
             "where b.item.id = :itemId " +
@@ -90,4 +57,5 @@ public interface BookingStorage extends JpaRepository<Booking, Long> {
     Optional<Booking> findNextBooking(@Param("itemId") Long itemId,
                                       @Param("now") LocalDateTime now,
                                       @Param("ownerId") Long ownerId);
+
 }

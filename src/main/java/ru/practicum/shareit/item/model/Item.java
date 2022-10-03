@@ -15,13 +15,15 @@ import javax.persistence.*;
 public class Item {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "item_id")
+    @Column(name = "item_id", nullable = false)
     private Long id;
-    @Column(name = "item_name")
+    @Column(name = "item_name", nullable = false, length = 200)
     private String name;
+    @Column(nullable = false, length = 300)
     private String description;
     @ManyToOne
-    @JoinColumn(name = "owner_id")
+    @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
+    @Column(nullable = false)
     private Boolean available;
 }
