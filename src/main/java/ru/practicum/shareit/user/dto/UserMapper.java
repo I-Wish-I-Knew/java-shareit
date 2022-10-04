@@ -1,16 +1,15 @@
-package ru.practicum.shareit.user.converter;
+package ru.practicum.shareit.user.dto;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.model.UserDto;
 
 @Component
-public class UserConverter {
+public class UserMapper {
 
     private final ModelMapper mapper;
 
-    public UserConverter() {
+    public UserMapper() {
         this.mapper = new ModelMapper();
     }
 

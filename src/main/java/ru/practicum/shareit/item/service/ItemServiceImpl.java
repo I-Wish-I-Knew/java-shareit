@@ -2,126 +2,141 @@ package ru.practicum.shareit.item.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.booking.model.BookingStatus;
+import ru.practicum.shareit.booking.storage.BookingStorage;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.UnavailableForUserException;
 import ru.practicum.shareit.exception.UpdateFailedException;
-import ru.practicum.shareit.exception.UserNotSpecifiedException;
-import ru.practicum.shareit.item.converter.ItemConverter;
+import ru.practicum.shareit.item.comment.Comment;
+import ru.practicum.shareit.item.comment.CommentStorage;
+import ru.practicum.shareit.item.comment.dto.CommentDto;
+import ru.practicum.shareit.item.comment.dto.CommentDtoInfo;
+import ru.practicum.shareit.item.comment.dto.CommentMapper;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemDtoInfo;
+import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.storage.ItemStorage;
+import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.storage.UserStorage;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static ru.practicum.shareit.user.service.UserServiceImpl.USER_NOT_FOUND;
+
 @Service
+@Transactional(readOnly = true)
 public class ItemServiceImpl implements ItemService {
 
     private final ItemStorage storage;
     private final UserStorage userStorage;
-    private final ItemConverter converter;
+    private final BookingStorage bookingStorage;
+    private final CommentStorage commentStorage;
+    public static final String ITEM_NOT_FOUND = "Вещь с id - %d не найдена";
 
-    private long itemId;
-
-
-    @Autowired
-    public ItemServiceImpl(ItemStorage storage, UserStorage userStorage, ItemConverter converter) {
+    public ItemServiceImpl(ItemStorage storage, UserStorage userStorage,
+                           BookingStorage bookingStorage, CommentStorage commentStorage) {
         this.storage = storage;
         this.userStorage = userStorage;
-        this.converter = converter;
-        this.itemId = 0;
+        this.bookingStorage = bookingStorage;
+        this.commentStorage = commentStorage;
     }
 
+    @Transactional
     @Override
     public ItemDto save(ItemDto itemDto, Long userId) {
-        checkUserId(userId);
-        checkContainsUserInStorage(userId);
-        Item item = converter.convertToItem(itemDto);
-        item.setId(++itemId);
-        item.setOwnerId(userId);
+        User owner = userStorage.findById(userId)
+                .orElseThrow(() -> new NotFoundException(String.format(USER_NOT_FOUND, userId)));
+        Item item = ItemMapper.convertToItem(itemDto, owner);
         storage.save(item);
-        return converter.convertToItemDto(item);
+        return ItemMapper.convertToItemDto(item);
     }
 
+    @Transactional
     @Override
     public ItemDto update(String updatedFields, Long itemId, Long userId) {
-        checkUserId(userId);
-        checkContainsUserInStorage(userId);
-        checkContainsItemInUserList(itemId, userId);
-        Item updatedItem = storage.get(itemId);
+        Item updatedItem = storage.findByIdAndOwnerId(itemId, userId)
+                .orElseThrow(() -> new NotFoundException(String.format(ITEM_NOT_FOUND +
+                        "у пользователя с id - %d", itemId, userId)));
         ObjectMapper mapper = new ObjectMapper();
         try {
             updatedItem = mapper.readerForUpdating(updatedItem).readValue(updatedFields);
         } catch (JsonProcessingException e) {
             throw new UpdateFailedException("Не удалось обновить данные");
         }
-        storage.update(updatedItem);
-        return converter.convertToItemDto(updatedItem);
+        storage.save(updatedItem);
+        return ItemMapper.convertToItemDto(updatedItem);
     }
 
     @Override
-    public ItemDto get(Long id) {
-        checkContainsItemInStorage(id);
-        return converter.convertToItemDto(storage.get(id));
+    public ItemDtoInfo get(Long id, Long userId) {
+        Item item = storage.findById(id)
+                .orElseThrow(() -> new NotFoundException(String.format(ITEM_NOT_FOUND, id)));
+        Booking lastBooking = bookingStorage.findLastBooking(id, LocalDateTime.now(), userId).orElse(null);
+        Booking nextBooking = bookingStorage.findNextBooking(id, LocalDateTime.now(), userId).orElse(null);
+        List<Comment> comments = commentStorage.findAllByItemId(id);
+        return ItemMapper.convertToItemDtoInfo(item, lastBooking, nextBooking, comments);
     }
 
     @Override
-    public List<ItemDto> getAll(Long userId) {
+    public List<ItemDtoInfo> getAllByUser(Long userId) {
         checkContainsUserInStorage(userId);
-        List<Item> items = storage.getAll(userId);
-        if (items == null) {
-            return new ArrayList<>();
-        }
+        Sort sort = Sort.by(Sort.Direction.ASC, "id");
+        List<Item> items = storage.findAllByOwnerId(userId, sort);
         return items.stream()
-                .map(converter::convertToItemDto)
+                .map(item -> ItemMapper.convertToItemDtoInfo(item,
+                        bookingStorage.findLastBooking(item.getId(), LocalDateTime.now(), userId).orElse(null),
+                        bookingStorage.findNextBooking(item.getId(), LocalDateTime.now(), userId).orElse(null),
+                        commentStorage.findAllByItemId(item.getId())))
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     @Override
     public void delete(Long id, Long userId) {
-        checkUserId(userId);
-        checkContainsItemInUserList(id, userId);
-        storage.delete(id, userId);
+        storage.deleteItemByIdAndOwnerId(id, userId);
     }
 
     @Override
     public List<ItemDto> searchItem(String text, Long userId) {
-        checkUserId(userId);
         checkContainsUserInStorage(userId);
-        List<Item> searchedItems = storage.searchItem(text);
-        if (searchedItems == null) {
+        if (text.isEmpty()) {
             return new ArrayList<>();
         }
+        List<Item> searchedItems = storage.findAllByNameOrDescriptionLike(text);
         return searchedItems.stream()
-                .map(converter::convertToItemDto)
+                .map(ItemMapper::convertToItemDto)
                 .collect(Collectors.toList());
     }
 
-    private void checkContainsItemInUserList(Long itemId, Long userId) {
-        if (!storage.containsInStorageByUser(itemId, userId)) {
-            throw new NotFoundException(String.format("Вещь с id - %d не найдена у пользователя с id - %d",
-                    itemId, userId));
+    @Transactional
+    @Override
+    public CommentDtoInfo saveComment(Long itemId, CommentDto commentDto, Long userId) {
+        User author = userStorage.findById(userId)
+                .orElseThrow(() -> new NotFoundException(String.format(USER_NOT_FOUND, userId)));
+        Item item = storage.findById(itemId)
+                .orElseThrow(() -> new NotFoundException(String.format(ITEM_NOT_FOUND, itemId)));
+        List<Booking> itemBookings = bookingStorage.findByItemIdAndBookerIdAndStatusAndEndBefore(itemId, userId,
+                BookingStatus.APPROVED, LocalDateTime.now());
+        if (itemBookings.isEmpty()) {
+            throw new UnavailableForUserException(String.format("Законченное бронирование вещи с id %d у пользователя с %d не найдено", itemId,
+                    userId));
         }
+        Comment comment = CommentMapper.convertToComment(commentDto, item, author);
+        commentStorage.save(comment);
+        return CommentMapper.convertToCommentDtoInfo(comment, author);
     }
 
     private void checkContainsUserInStorage(Long userId) {
-        if (!userStorage.containsInStorage(userId)) {
-            throw new NotFoundException(String.format("Пользователь с id - %d не найден", userId));
-        }
-    }
-
-    private void checkContainsItemInStorage(Long itemId) {
-        if (!storage.containsInStorage(itemId)) {
-            throw new NotFoundException(String.format("Вещь с id - %d не найдена", itemId));
-        }
-    }
-
-    private void checkUserId(Long userId) {
-        if (userId == null) {
-            throw new UserNotSpecifiedException("Не указан идентификатор пользователя");
+        if (!userStorage.existsById(userId)) {
+            throw new NotFoundException(String.format(USER_NOT_FOUND, userId));
         }
     }
 }
