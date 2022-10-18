@@ -10,6 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
+@EqualsAndHashCode
 public class ItemDtoInfo {
     private Long id;
     private String name;
@@ -23,6 +24,7 @@ public class ItemDtoInfo {
     @Setter
     @AllArgsConstructor
     @NoArgsConstructor
+    @EqualsAndHashCode
     public static class Booking {
         private Long id;
         private Long bookerId;
@@ -32,6 +34,7 @@ public class ItemDtoInfo {
     @Setter
     @AllArgsConstructor
     @NoArgsConstructor
+    @EqualsAndHashCode
     public static class Comment {
         private Long id;
         private String text;

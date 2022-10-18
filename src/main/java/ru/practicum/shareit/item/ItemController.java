@@ -10,10 +10,12 @@ import ru.practicum.shareit.item.dto.ItemDtoInfo;
 import ru.practicum.shareit.item.service.ItemService;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
 import java.util.List;
 
-@RestController
 @Validated
+@RestController
 @RequestMapping("/items")
 public class ItemController {
 
@@ -25,8 +27,12 @@ public class ItemController {
     }
 
     @GetMapping
-    public List<ItemDtoInfo> getAllByUser(@RequestHeader("X-Sharer-User-Id") Long userId) {
-        return service.getAllByUser(userId);
+    public List<ItemDtoInfo> getAllByUser(@RequestHeader("X-Sharer-User-Id") Long userId,
+                                          @PositiveOrZero @RequestParam(value = "from",
+                                                  defaultValue = "0") Integer from,
+                                          @Positive @RequestParam(value = "size",
+                                                  defaultValue = "10") Integer size) {
+        return service.getAllByUser(userId, from / size, size);
     }
 
     @GetMapping("/{itemId}")
@@ -63,7 +69,11 @@ public class ItemController {
 
     @GetMapping("/search")
     public List<ItemDto> searchItem(@RequestParam String text,
-                                    @RequestHeader("X-Sharer-User-Id") Long userId) {
-        return service.searchItem(text, userId);
+                                    @RequestHeader("X-Sharer-User-Id") Long userId,
+                                    @PositiveOrZero @RequestParam(value = "from",
+                                            defaultValue = "0") Integer from,
+                                    @Positive @RequestParam(value = "size",
+                                            defaultValue = "10") Integer size) {
+        return service.searchItem(text, userId, from / size, size);
     }
 }

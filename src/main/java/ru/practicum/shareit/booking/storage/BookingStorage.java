@@ -24,8 +24,8 @@ public interface BookingStorage extends JpaRepository<Booking, Long> {
             "and b.end > :start " +
             "and b.status = :status")
     boolean reservedForDates(@Param("itemId") Long itemId,
-                             @Param("end") LocalDateTime end,
                              @Param("start") LocalDateTime start,
+                             @Param("end") LocalDateTime end,
                              @Param("status") BookingStatus status);
 
     @Query(value = "select b.*," +
