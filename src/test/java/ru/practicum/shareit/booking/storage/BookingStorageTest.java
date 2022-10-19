@@ -77,37 +77,37 @@ class BookingStorageTest {
 
     @Test
     void findBookingByIdAndBookerId() {
-        Optional<Booking> booking11 = bookingStorage.findBookingByIdAndBookerId(booking1.getId(),
+        Optional<Booking> booking1FromStorage = bookingStorage.findBookingByIdAndBookerId(booking1.getId(),
                 booking1.getBooker().getId());
-        assertThat(booking11).isNotEmpty()
+        assertThat(booking1FromStorage).isNotEmpty()
                 .contains(booking1);
 
-        Optional<Booking> booking21 = bookingStorage.findBookingByIdAndBookerId(booking2.getId(),
+        Optional<Booking> booking2FromStorage = bookingStorage.findBookingByIdAndBookerId(booking2.getId(),
                 booking2.getBooker().getId());
-        assertThat(booking21).isNotEmpty()
+        assertThat(booking2FromStorage).isNotEmpty()
                 .contains(booking2);
 
-        Optional<Booking> booking32 = bookingStorage.findBookingByIdAndBookerId(booking3.getId(),
+        Optional<Booking> booking3FromStorage = bookingStorage.findBookingByIdAndBookerId(booking3.getId(),
                 booking3.getBooker().getId());
-        assertThat(booking32).isNotEmpty()
+        assertThat(booking3FromStorage).isNotEmpty()
                 .contains(booking3);
     }
 
     @Test
     void findBookingByIdAndItemOwnerId() {
-        Optional<Booking> booking12 = bookingStorage.findBookingByIdAndItemOwnerId(booking1.getId(),
+        Optional<Booking> booking1FromStorage = bookingStorage.findBookingByIdAndItemOwnerId(booking1.getId(),
                 booking1.getItem().getOwner().getId());
-        assertThat(booking12).isNotEmpty()
+        assertThat(booking1FromStorage).isNotEmpty()
                 .contains(booking1);
 
-        Optional<Booking> booking22 = bookingStorage.findBookingByIdAndItemOwnerId(booking2.getId(),
+        Optional<Booking> booking2FromStorage = bookingStorage.findBookingByIdAndItemOwnerId(booking2.getId(),
                 booking2.getItem().getOwner().getId());
-        assertThat(booking22).isNotEmpty()
+        assertThat(booking2FromStorage).isNotEmpty()
                 .contains(booking2);
 
-        Optional<Booking> booking31 = bookingStorage.findBookingByIdAndItemOwnerId(booking3.getId(),
+        Optional<Booking> booking3FromStorage = bookingStorage.findBookingByIdAndItemOwnerId(booking3.getId(),
                 booking3.getItem().getOwner().getId());
-        assertThat(booking31).isNotEmpty()
+        assertThat(booking3FromStorage).isNotEmpty()
                 .contains(booking3);
     }
 

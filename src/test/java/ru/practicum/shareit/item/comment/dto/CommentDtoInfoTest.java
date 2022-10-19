@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CommentDtoInfoTest {
 
     @Autowired
-    JacksonTester<CommentDtoInfo> json;
+    private JacksonTester<CommentDtoInfo> json;
 
     @Test
     void testCommentDtoInfo() throws IOException {

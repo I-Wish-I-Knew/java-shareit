@@ -21,7 +21,7 @@ class CommentStorageTest {
     @Autowired
     private ItemStorage itemStorage;
     @Autowired
-    UserStorage userStorage;
+    private UserStorage userStorage;
     private Item item1;
     private Item item2;
     private Comment comment1;
