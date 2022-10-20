@@ -5,9 +5,9 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingDtoInfo;
 import ru.practicum.shareit.booking.dto.BookingMapper;
+import ru.practicum.shareit.booking.dto.GetAllBookingsRequest;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
-import ru.practicum.shareit.booking.model.State;
 import ru.practicum.shareit.booking.storage.BookingStorage;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.UnavailableItemException;
@@ -52,19 +52,19 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public BookingDto save(BookingDto bookingDto, Long userId) {
+    public BookingDtoInfo save(BookingDto bookingDto, Long userId) {
         User booker = userStorage.findById(userId).orElseThrow(() ->
                 new NotFoundException(String.format(USER_NOT_FOUND, userId)));
         Item item = itemStorage.findByIdWhereOwnerIdNot(bookingDto.getItemId(), userId).orElseThrow(() ->
                 new NotFoundException(String.format(ITEM_NOT_FOUND, bookingDto.getItemId())));
-        if (storage.reservedForDates(bookingDto.getId(), bookingDto.getEnd(),
-                bookingDto.getStart(), BookingStatus.APPROVED) || Boolean.FALSE.equals(item.getAvailable())) {
+        if (storage.reservedForDates(bookingDto.getItemId(), bookingDto.getStart(),
+                bookingDto.getEnd(), BookingStatus.APPROVED) || Boolean.FALSE.equals(item.getAvailable())) {
             throw new UnavailableItemException(String.format("Вещь с id - %d не доступна " +
                     "для бронирования", item.getId()));
         }
         bookingDto.setStatus(BookingStatus.WAITING);
         Booking booking = BookingMapper.convertToBooking(bookingDto, item, booker);
-        return BookingMapper.convertToBookingDto(storage.save(booking));
+        return BookingMapper.convertToBookingDtoInfo(storage.save(booking));
     }
 
     @Override
@@ -94,17 +94,18 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingDtoInfo> getAll(State state, Long userId, boolean isOwner) {
+    public List<BookingDtoInfo> getAll(GetAllBookingsRequest request) {
+        Long userId = request.getUserId();
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Booking> cq = cb.createQuery(Booking.class);
         Root<Booking> booking = cq.from(Booking.class);
         List<Predicate> predicates = new ArrayList<>();
-        if (isOwner) {
+        if (request.isOwner()) {
             predicates.add(cb.equal(booking.get("item").get("owner").get("id"), userId));
         } else {
             predicates.add(cb.equal(booking.get("booker").get("id"), userId));
         }
-        switch (state) {
+        switch (request.getState()) {
             case CURRENT:
                 predicates.add(cb.lessThanOrEqualTo(booking.get("start"), LocalDateTime.now()));
                 predicates.add(cb.greaterThan(booking.get("end"), LocalDateTime.now()));
@@ -125,7 +126,10 @@ public class BookingServiceImpl implements BookingService {
                 break;
         }
         cq.select(booking).where(predicates.toArray(new Predicate[]{})).orderBy(cb.desc(booking.get("start")));
-        List<Booking> bookings = entityManager.createQuery(cq).getResultList();
+        List<Booking> bookings = entityManager.createQuery(cq)
+                .setMaxResults(request.getSize())
+                .setFirstResult(request.getFrom())
+                .getResultList();
         if (bookings.isEmpty()) {
             throw new NotFoundException(String.format("Бронирования для пользователя с id %d не найдены", userId));
         }

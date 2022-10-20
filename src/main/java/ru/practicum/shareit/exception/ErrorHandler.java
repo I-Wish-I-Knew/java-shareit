@@ -55,9 +55,9 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleWrongUser(UnavailableForUserException e) {
+    public ErrorResponse handleUnavailableForUser(UnavailableForUserException e) {
         log.info(e.getMessage(), e);
-        return new ErrorResponse("WrongUserException", e.getMessage());
+        return new ErrorResponse("UnavailableForUserException", e.getMessage());
     }
 
     @ExceptionHandler

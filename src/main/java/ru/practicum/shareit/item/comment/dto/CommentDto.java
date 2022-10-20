@@ -9,6 +9,7 @@ import javax.validation.constraints.NotBlank;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
+@EqualsAndHashCode
 public class CommentDto {
     private Long id;
     @NotBlank

@@ -18,19 +18,17 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
     private final UserStorage storage;
-    private final UserMapper converter;
     public static final String USER_NOT_FOUND = "Пользователь c id - %d не найден";
 
-    public UserServiceImpl(UserStorage storage, UserMapper converter) {
+    public UserServiceImpl(UserStorage storage) {
         this.storage = storage;
-        this.converter = converter;
     }
 
     @Override
     public List<UserDto> getAll() {
         List<User> users = storage.findAll();
         return users.stream()
-                .map(converter::convertToUserDto)
+                .map(UserMapper::convertToUserDto)
                 .collect(Collectors.toList());
     }
 
@@ -38,15 +36,15 @@ public class UserServiceImpl implements UserService {
     public UserDto get(Long id) {
         User user = storage.findById(id)
                 .orElseThrow(() -> new NotFoundException(String.format(USER_NOT_FOUND, id)));
-        return converter.convertToUserDto(user);
+        return UserMapper.convertToUserDto(user);
     }
 
     @Transactional
     @Override
     public UserDto save(UserDto userDto) {
-        User user = converter.convertToUser(userDto);
-        storage.save(user);
-        return converter.convertToUserDto(user);
+        User user = UserMapper.convertToUser(userDto);
+        user = storage.save(user);
+        return UserMapper.convertToUserDto(user);
     }
 
     @Transactional
@@ -60,8 +58,8 @@ public class UserServiceImpl implements UserService {
         } catch (JsonProcessingException e) {
             throw new UpdateFailedException("Не удалось обновить данные");
         }
-        storage.save(updatedUser);
-        return converter.convertToUserDto(updatedUser);
+        updatedUser = storage.save(updatedUser);
+        return UserMapper.convertToUserDto(updatedUser);
     }
 
     @Transactional

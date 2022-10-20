@@ -15,11 +15,11 @@ public interface ItemService {
 
     ItemDtoInfo get(Long id, Long userId);
 
-    List<ItemDtoInfo> getAllByUser(Long userId);
+    List<ItemDtoInfo> getAllByUser(Long userId, Integer from, Integer size);
 
     void delete(Long id, Long userId);
 
-    List<ItemDto> searchItem(String text, Long userId);
+    List<ItemDto> searchItem(String text, Long userId, Integer from, Integer size);
 
     CommentDtoInfo saveComment(Long itemId, CommentDto commentDto, Long userId);
 }
