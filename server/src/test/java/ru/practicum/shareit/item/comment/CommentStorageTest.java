@@ -1,6 +1,5 @@
 package ru.practicum.shareit.item.comment;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +11,8 @@ import ru.practicum.shareit.user.storage.UserStorage;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 class CommentStorageTest {
@@ -75,13 +76,13 @@ class CommentStorageTest {
     void findAllById() {
         List<Comment> comments = storage.findAllByItemId(item1.getId());
 
-        Assertions.assertThat(comments).hasSize(2)
+        assertThat(comments).hasSize(2)
                 .contains(comment1)
                 .contains(comment2);
 
         List<Comment> comments2 = storage.findAllByItemId(item2.getId());
 
-        Assertions.assertThat(comments2).hasSize(2)
+        assertThat(comments2).hasSize(2)
                 .contains(comment3)
                 .contains(comment4);
     }

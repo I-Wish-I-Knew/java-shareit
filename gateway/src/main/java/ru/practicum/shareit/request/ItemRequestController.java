@@ -31,6 +31,7 @@ public class ItemRequestController {
                                                                    defaultValue = "0") Integer from,
                                                            @Positive @RequestParam(value = "size",
                                                                    defaultValue = "10") Integer size) {
+        log.info("Get itemRequests by author {}, from={}, size={}", userId, from, size);
         return client.getOwn(userId, from / size, size);
     }
 
@@ -40,18 +41,21 @@ public class ItemRequestController {
                                                                            defaultValue = "0") Integer from,
                                                                     @Positive @RequestParam(value = "size",
                                                                            defaultValue = "10") Integer size) {
+        log.info("Get itemRequests by user {}, from={}, size={}", userId, from, size);
         return client.getAllOtherUser(userId, from / size, size);
     }
 
     @GetMapping("/{requestId}")
     public ResponseEntity<ItemRequestDtoInfo> get(@PathVariable Long requestId,
                                                   @RequestHeader("X-Sharer-User-Id") Long userId) {
+        log.info("Get itemRequest {} by user {}", requestId, userId);
         return client.get(requestId, userId);
     }
 
     @PostMapping
     public ResponseEntity<ItemRequestDto> save(@RequestBody @Valid ItemRequestDto itemRequestDto,
                                                @RequestHeader("X-Sharer-User-Id") Long authorId) {
+        log.info("Save itemRequest {} by user {}", itemRequestDto, authorId);
         return client.save(itemRequestDto, authorId);
     }
 }

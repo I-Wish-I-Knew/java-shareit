@@ -33,18 +33,21 @@ public class ItemController {
                                                                   defaultValue = "0") Integer from,
                                                           @Positive @RequestParam(value = "size",
                                                                   defaultValue = "10") Integer size) {
+        log.info("Get items by user {}, from={}, size={}", userId, from, size);
         return client.getAllByUser(userId, from / size, size);
     }
 
     @GetMapping("/{itemId}")
     public ResponseEntity<ItemDtoInfo> get(@PathVariable Long itemId,
                                            @RequestHeader("X-Sharer-User-Id") Long userId) {
+        log.info("Get item {} by user {}", itemId, userId);
         return client.get(itemId, userId);
     }
 
     @PostMapping
     public ResponseEntity<ItemDto> save(@RequestBody @Valid ItemDto itemDto,
                                         @RequestHeader("X-Sharer-User-Id") Long userId) {
+        log.info("Save item {} by user {}", itemDto, userId);
         return client.save(itemDto, userId);
     }
 
@@ -52,6 +55,7 @@ public class ItemController {
     public ResponseEntity<CommentDtoInfo> saveComment(@PathVariable Long itemId,
                                                       @RequestBody @Valid CommentDto commentDto,
                                                       @RequestHeader("X-Sharer-User-Id") Long userId) {
+        log.info("Save comment {} for item {} by user {}", commentDto, itemId, userId);
         return client.saveComment(itemId, commentDto, userId);
     }
 
@@ -59,12 +63,14 @@ public class ItemController {
     public ResponseEntity<ItemDto> update(@PathVariable Long itemId,
                                           @RequestBody String updatedFields,
                                           @RequestHeader("X-Sharer-User-Id") Long userId) {
+        log.info("Update item {] fields {} by user {}", itemId, updatedFields, userId);
         return client.update(updatedFields, itemId, userId);
     }
 
     @DeleteMapping("/{itemId}")
     public void delete(@PathVariable Long itemId,
                        @RequestHeader("X-Sharer-User-Id") Long userId) {
+        log.info("Delete item {} by user {}", itemId, userId);
         client.delete(itemId, userId);
     }
 
@@ -75,6 +81,7 @@ public class ItemController {
                                                             defaultValue = "0") Integer from,
                                                     @Positive @RequestParam(value = "size",
                                                             defaultValue = "10") Integer size) {
+        log.info("Search for items with text {} by user {}, from={}, size={}", text, userId, from, size);
         return client.searchItem(text, userId, from / size, size);
     }
 }
